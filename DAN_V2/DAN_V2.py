@@ -46,7 +46,7 @@ def get_filenames(data_dir):
 def get_synth_input_fn():
     return dan_run_loop.get_synth_input_fn(112, 112, 1, 68)
 
-def vgg16_input_fn(is_training,data_dir,batch_size=64,num_epochs=1,num_parallel_calls=1, multi_gpu=False):
+def vgg16_input_fn(is_training,data_dir,batch_size=128,num_epochs=10,num_parallel_calls=1, multi_gpu=False):
     img_path,pts_path = get_filenames(data_dir)
 
     def decode_img_pts(img,pts,is_training):
@@ -89,16 +89,29 @@ def video_input_fn(data_dir,img_size,num_lmark):
 
     return input_fn
 
+def dirImgs_input_fn(data_dir,img_size,num_lmark):
+    def _get_oneImage():
+        for file in os.listdir(data_dir):
+            print('\n\n\n\n\n\n\n\n',file,'\n\n\n\n\n\n\n\n')
+            img = cv2.imread(data_dir+file, cv2.IMREAD_GRAYSCALE)
+            frame = cv2.resize(img,(img_size,img_size)).astype(np.float32)
+            yield (frame,np.zeros([num_lmark,2],np.float32))
+
+    def input_dir_img_fn():
+        dataset = tf.data.Dataset.from_generator(_get_oneImage,(tf.float32,tf.float32),(tf.TensorShape([img_size,img_size]),tf.TensorShape([num_lmark,2])))
+        return dataset
+
+    return input_dir_img_fn
 
 
 def main(argv):
     parser = dan_run_loop.DANArgParser()
     parser.set_defaults(data_dir='./data_dir',
-                        model_dir='./model_dir',
+                        model_dir='./model_dir3',
                         data_format='channels_last',
-                        train_epochs=20,
+                        train_epochs=50,
                         epochs_per_eval=10,
-                        batch_size=64)
+                        batch_size=128)
 
     flags = parser.parse_args(args=argv[1:])
 
@@ -121,7 +134,7 @@ def main(argv):
         return dan_run_loop.dan_model_fn(features=features,
                             groundtruth=labels,
                             mode=mode,
-                            stage=params['dan_stage'],                                                    
+                            stage=params['dan_stage'],
                             num_lmark=params['num_lmark'],
                             model_class=VGG16Model,
                             mean_shape=mean_shape,
@@ -133,7 +146,7 @@ def main(argv):
     input_function = flags.use_synthetic_data and get_synth_input_fn() or vgg16_input_fn
 
     if flags.mode == tf.estimator.ModeKeys.PREDICT:
-        input_function = video_input_fn(flags.data_dir,112,flags.num_lmark)
+        input_function = dirImgs_input_fn(flags.data_dir,112,flags.num_lmark)
     dan_run_loop.dan_main(flags,vgg16_model_fn,input_function)
 
 if __name__ == '__main__':

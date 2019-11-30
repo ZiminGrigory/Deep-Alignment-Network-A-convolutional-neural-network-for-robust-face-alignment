@@ -6,6 +6,7 @@ import argparse
 import os
 
 import tensorflow as tf
+import numpy as np
 
 from official.utils.arg_parsers import parsers
 from official.utils.logging import hooks_helper
@@ -84,7 +85,7 @@ def get_synth_input_fn(height, width, num_channels, num_lmark):
 def dan_model_fn(features,
                  groundtruth,
                  mode,
-                 stage,                 
+                 stage,
                  num_lmark,
                  model_class,
                  mean_shape,
@@ -172,17 +173,27 @@ def dan_main(flags, model_function, input_function):
     if flags.mode == tf.estimator.ModeKeys.PREDICT:
         import cv2
         predict_results = estimator.predict(input_function)
+        j = 0
         for x in predict_results:
+            j+=1
             landmark = x['s2_ret']
             img = x['img']
+            outImg = np.zeros([112,112,3])
+            outImg[:,:,0] = np.squeeze(img, axis=2)
+            outImg[:,:,1] = np.squeeze(img, axis=2)
+            outImg[:,:,2] = np.squeeze(img, axis=2)
+            print (img.shape)
+            for x,y in landmark:
+                outImg[111 if int(y) > 110  else int(y),111  if int(x) > 110 else int(x),:] = [0,0, 255]
 
             cv2.imshow('t',img)
             cv2.waitKey(30)
+            cv2.imwrite("/home/greg/dev/csc_practice_autumn2019/300W_HELEN/"+ str(j) + ".jpg", outImg)
         return
 
 
     def input_fn_eval():
-        return input_function(False, flags.data_dir if flags.data_dir_test is not None else flags.data_dir_test, flags.batch_size,
+        return input_function(False, flags.data_dir if flags.data_dir_test is not None else flags.data_dir, flags.batch_size,
                               1, flags.num_parallel_calls, flags.multi_gpu)
 
     def input_fn_train():
