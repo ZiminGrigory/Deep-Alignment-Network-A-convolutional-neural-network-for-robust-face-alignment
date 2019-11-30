@@ -255,7 +255,7 @@ ModelManifest.xml
 /DAN/DAN/Jelo
 /DAN/DAN/Model_
 /DAN/DAN/__pycache__
-*.txt
+#*.txt
 *.npy
 *.npz
 *.xml
