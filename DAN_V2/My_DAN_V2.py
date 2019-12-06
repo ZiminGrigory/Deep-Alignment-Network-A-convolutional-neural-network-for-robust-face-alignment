@@ -115,16 +115,13 @@ def storeFramesWithMarksAndPredictRes(generator, predictFunc):
 
 
     predict_results = estimator.predict(generator)
-    j = 0
     for x in predict_results:
-        j+=1
         landmark = x['s2_ret']
         img = x['img']
-        outImg = np.zeros([112,112,3])
-        outImg[:,:,0] = np.squeeze(img, axis=2)
-        outImg[:,:,1] = np.squeeze(img, axis=2)
-        outImg[:,:,2] = np.squeeze(img, axis=2)
-        print (img.shape)
+        outImg = np.zeros([140,112,3])
+        outImg[:112,:,0] = np.squeeze(img, axis=2)
+        outImg[:112,:,1] = np.squeeze(img, axis=2)
+        outImg[:112,:,2] = np.squeeze(img, axis=2)
         for x,y in landmark:
             outImg[111 if int(y) > 110  else int(y),111  if int(x) > 110 else int(x),:] = [0,0, 255]
 
@@ -132,15 +129,13 @@ def storeFramesWithMarksAndPredictRes(generator, predictFunc):
         eyes2 = [item for sublist in eyes for item in sublist]
         prediction = predictFunc(eyes2)
         if prediction == 1:
-            outImg[:,:,1] = 127
+            outImg[112:,:,1] = 127
         else:
-            outImg[:,:,0] = 127
-
+            outImg[112:,:,0] = 127
 
         cv2.imshow('video with bboxes', cv2.resize(outImg,(300,300)).astype(np.uint8))
         if cv2.waitKey(33) == 27: 
             break  # esc to quit
-        # cv2.imwrite("/home/greg/dev/csc_practice_autumn2019/300W_HELEN/TST/{:05d}_{}.png".format(j, prediction), outImg)
 
 def storeEyesData(generator, fileName):
     # data_dir='./data_dir'
